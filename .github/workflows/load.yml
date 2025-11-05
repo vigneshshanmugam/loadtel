@@ -1,0 +1,115 @@
+name: Load
+on:
+  workflow_call:
+    inputs:
+        numprocs:
+          default: 5
+          description: 'Number of collector instances to run'
+          required: false
+          type: number
+        duration:
+          default: '1m'
+          description: 'Duration for each collector instance to run'
+          required: false
+          type: string
+        delay_start:
+          default: 10
+          description: 'Maximum delay in seconds before starting each collector'
+          required: false
+          type: number
+        matrix:
+          default: '[0,1,2]'
+          description: 'Matrix of parallel jobs to run'
+          required: false
+          type: string
+        collector_version:
+          default: '0.135.0'
+          description: 'Version of the collector to use'
+          required: false
+          type: string
+        collector_configuration:
+          required: true
+          description: 'Collector configuration to use'
+          type: string
+
+jobs:
+  load:
+    name: Load
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        parallel: ${{ fromJSON(inputs.matrix) }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      - name: Install OpenTelemetry Collector
+        run: |
+          curl -sL -o otelcol-contrib.deb https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v${{ inputs.collector_version }}/otelcol-contrib_${{ inputs.collector_version }}_linux_amd64.deb
+          sudo dpkg -i otelcol-contrib.deb
+          rm otelcol-contrib.deb
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
+
+      - name: Install Supervisor
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install supervisor
+
+      - name: Configure Supervisor
+        env:
+          DURATION: ${{ inputs.duration }}
+          DELAY_START: ${{ inputs.delay_start }}
+          NUMPROCS: ${{ inputs.numprocs }}
+        run: ./generate-supervisord-config.sh
+
+      - name: Configure OpenTelemetry Collectors
+        run: |
+          cat > config.yaml <<EOF
+          ${inputs.collector_configuration}
+          EOF
+
+      - name: Start OpenTelemetry Collectors
+        env:
+          INSTANCE: ${{ matrix.parallel }}
+        run: |
+          mkdir -p logs
+          # Calculate timeout: duration + delay_start + buffer
+          # Convert duration to seconds (handles s, m, h, d suffixes)
+          duration="${{ inputs.duration }}"
+          if [[ "$duration" =~ ^[0-9]+s$ ]]; then
+            duration_seconds=${duration%s}
+          elif [[ "$duration" =~ ^[0-9]+m$ ]]; then
+            duration_seconds=$((${duration%m} * 60))
+          elif [[ "$duration" =~ ^[0-9]+h$ ]]; then
+            duration_seconds=$((${duration%h} * 3600))
+          elif [[ "$duration" =~ ^[0-9]+d$ ]]; then
+            duration_seconds=$((${duration%d} * 86400))
+          else
+            # Assume seconds if no suffix
+            duration_seconds=$duration
+          fi
+          delay_seconds=${{ inputs.delay_start }}
+          timeout_seconds=$((duration_seconds + delay_seconds + 120))
+          echo "Running collectors with timeout ${timeout_seconds}s (duration: ${duration_seconds}s, delay: ${delay_seconds}s)"
+          source .venv/bin/activate && timeout ${timeout_seconds}s supervisord -c supervisord.ini || true
+
+      - name: Sample Error Logs
+        if: always()
+        run: |
+          ls -1S logs/*.err.log | head -5 | xargs tail
+
+      - name: Upload Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs-${{ matrix.parallel }}
+          path: logs
+          retention-days: 5
