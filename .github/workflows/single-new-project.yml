@@ -1,0 +1,161 @@
+name: Load Single New Project
+on:
+  workflow_dispatch:
+    inputs:
+        duration:
+          description: 'Duration for each collector instance to run'
+          required: false
+          default: '1m'
+          type: string
+        delay_start:
+          description: 'Maximum delay in seconds before starting each collector'
+          required: false
+          default: 10
+          type: number
+        numprocs:
+          description: 'Number of collector instances to run'
+          required: false
+          default: 5
+          type: number
+        parallelism:
+          description: 'Number of parallel jobs to run'
+          required: false
+          default: 3
+          type: number
+        region_id:
+          description: 'Region ID for the observability project'
+          required: false
+          default: "aws-us-east-1"
+          type: string
+
+jobs:
+  launch-project:
+    name: Launch Project
+    runs-on: ubuntu-latest
+    outputs:
+      es_api_key: ${{ steps.save-project-information.outputs.es_api_key }}
+      ingest_url: ${{ steps.save-project-information.outputs.ingest_url }}
+      kibana_url: ${{ steps.save-project-information.outputs.kibana_url }}
+      project_id: ${{ steps.save-project-information.outputs.project_id }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Initialize Terraform
+        run: terraform init
+
+      - name: Set Terraform Input
+        run: |
+          cat > terraform.tfvars << EOF
+          region_id = "${{ inputs.region_id }}"
+          EOF
+
+      - name: Apply Terraform
+        run: terraform apply -auto-approve
+        env:
+          EC_API_KEY: ${{ secrets.EC_API_KEY }}
+
+      - name: Save Project Information
+        id: save-project-information
+        run: |
+          apikey=$(terraform output --json api_key | jq -r .encoded)
+          echo "::add-mask::$apikey"
+          echo "es_api_key=$apikey" >> $GITHUB_OUTPUT
+          echo "ingest_url=$(terraform output -raw apm_url | sed 's/.apm./.ingest./')" >> $GITHUB_OUTPUT
+          echo "kibana_url=$(terraform output -raw kibana_url)" >> $GITHUB_OUTPUT
+          echo "project_id=$(terraform output -raw project_id)" >> $GITHUB_OUTPUT
+
+      - name: Save Terraform State
+        id: save-terraform-state
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-state
+          path: |
+            .terraform
+            terraform.tfstate
+            terraform.tfstate.backup
+          include-hidden-files: true
+
+  determine-parallelism:
+    name: Determine Parallelism
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.determine-parallelism.outputs.matrix }}
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
+      - name: Define matrix
+        id: determine-parallelism
+        run: |
+          echo "matrix=$(python -c 'import json; print(json.dumps(list(range(${{ inputs.parallelism }}))))')" >> $GITHUB_OUTPUT
+
+  configure-collector:
+    name: Configure Collector
+    runs-on: ubuntu-latest
+    outputs:
+      collector_config: ${{ steps.configure-collector.outputs.collector_config }}
+      matrix: ${{ needs.determine-parallelism.outputs.matrix }}
+    needs:
+      - launch-project
+      - determine-parallelism
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      - name: Generate Config
+        env:
+          API_KEY: ${{ needs.launch-project.outputs.es_api_key }}
+          OTLP_ENDPOINT: ${{ needs.launch-project.outputs.ingest_url }}:443
+        run: |
+          ./single-new-project/generate-collector-config.sh > config
+          echo "::add-mask::$(cat config)"
+          echo "collector_config=$(cat config)" >> $GITHUB_OUTPUT
+
+  load-project:
+    name: Run Collectors
+    needs:
+      - configure-collector
+    uses: graphaelli/improved-computing-machine/.github/workflows/load.yml@main
+    with:
+      collector_configuration: ${{ needs.configure-collector.outputs.collector_config }}
+      collector_version: ${{ inputs.collector_version }}
+      delay_start: ${{ inputs.delay_start }}
+      duration: ${{ inputs.duration }}
+      matrix: ${{ needs.determine-parallelism.outputs.matrix }}
+      numprocs: ${{ inputs.numprocs }}
+
+  cleanup-project:
+    name: Cleanup Project
+    runs-on: ubuntu-latest
+    needs:
+      - launch-project
+      - load-project
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+      - name: Initialize Terraform
+        run: terraform init
+
+      - name: Download Terraform State
+        uses: actions/download-artifact@v4
+        with:
+          name: terraform-state
+
+      - name: Destroy Terraform
+        if: always()
+        run: terraform destroy -auto-approve
+        env:
+          EC_API_KEY: ${{ secrets.EC_API_KEY }}
