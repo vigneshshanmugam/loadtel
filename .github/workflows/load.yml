@@ -86,7 +86,7 @@ jobs:
 
       - name: Start OpenTelemetry Collectors
         env:
-          INSTANCE: ${{ matrix.parallel }}
+          ITERATION: ${{ matrix.parallel }}
         run: |
           mkdir -p logs
           # Calculate timeout: duration + delay_start + buffer
