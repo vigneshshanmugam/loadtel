@@ -2,44 +2,44 @@ name: Load Single New Project
 on:
   workflow_dispatch:
     inputs:
-        duration:
-          description: 'Duration for each collector instance to run'
-          required: false
-          default: '1m'
-          type: string
-        delay_start:
-          description: 'Maximum delay in seconds before starting each collector'
-          required: false
-          default: '10'
-          type: string
-        numprocs:
-          description: 'Number of collector instances to run'
-          required: false
-          default: '5'
-          type: string
-        parallelism:
-          description: 'Number of parallel jobs to run'
-          required: false
-          default: 3
-          type: number
-        region_id:
-          description: 'Region ID for the observability project'
-          required: false
-          default: "aws-us-east-1"
-          type: string
-        collector_version:
-          description: 'Version of the collector to use'
-          required: false
-          default: '0.138.0'
-          type: string
-        output_type:
-          description: 'Output type for the collector (otlp or elasticsearch)'
-          required: false
-          default: 'otlp'
-          type: choice
-          options:
-            - otlp
-            - elasticsearch
+      duration:
+        description: 'Duration for each collector instance to run'
+        required: false
+        default: '1m'
+        type: string
+      delay_start:
+        description: 'Maximum delay in seconds before starting each collector'
+        required: false
+        default: '10'
+        type: string
+      numprocs:
+        description: 'Number of collector instances to run'
+        required: false
+        default: '5'
+        type: string
+      parallelism:
+        description: 'Number of parallel jobs to run'
+        required: false
+        default: 3
+        type: number
+      region_id:
+        description: 'Region ID for the observability project'
+        required: false
+        default: "aws-us-east-1"
+        type: string
+      collector_version:
+        description: 'Version of the collector to use'
+        required: false
+        default: '0.138.0'
+        type: string
+      output_type:
+        description: 'Output type for the collector (otlp or elasticsearch)'
+        required: false
+        default: 'otlp'
+        type: choice
+        options:
+          - otlp
+          - elasticsearch
 
 jobs:
   plan:
