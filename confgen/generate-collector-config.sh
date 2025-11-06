@@ -131,6 +131,7 @@ else
     metrics:
       readers:
         - periodic:
+            interval: 60000
             exporter:
               otlp:
                 protocol: http/protobuf
