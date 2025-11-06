@@ -15,7 +15,7 @@ on:
       numprocs:
         description: 'Number of collector instances to run'
         required: false
-        default: '100'
+        default: '300'
         type: string
       parallelism:
         description: 'Number of parallel jobs to run'
