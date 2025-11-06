@@ -12,6 +12,21 @@ fi
 
 cat << EOF
 receivers:
+  hostmetrics/selfmon:
+    collection_interval: 60s
+    scrapers:
+      cpu:
+        metrics:
+          system.cpu.utilization:
+            enabled: true
+          system.cpu.logical.count:
+            enabled: true
+      memory:
+        metrics:
+          system.memory.utilization:
+            enabled: true
+      network:
+      processes:
   hostmetrics/first:
     collection_interval: 30s
     scrapers:
@@ -118,6 +133,10 @@ processors:
           enabled: true
 
 exporters:
+  otlp/selfmon:
+    endpoint: ${MONITORING_OTLP_ENDPOINT}
+    headers:
+      authorization: ApiKey ${MONITORING_API_KEY}
 EOF
 
 if [ -n "${OTLP_ENDPOINT}" ]; then
@@ -155,6 +174,10 @@ cat << EOF
 
 service:
   pipelines:
+    metrics/selfmon:
+      receivers: [hostmetrics/selfmon]
+      processors: [resourcedetection,batch]
+      exporters: [otlp/selfmon]
 EOF
 
 if [ -n "${OTLP_ENDPOINT}" ]; then
