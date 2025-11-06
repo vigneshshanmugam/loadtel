@@ -42,6 +42,20 @@ on:
             - elasticsearch
 
 jobs:
+  plan:
+    name: Summarize Plan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Summarize Plan
+        run: |
+          echo "Output Type: ${{ inputs.output_type }}"
+          echo "Duration: ${{ inputs.duration }}"
+          echo "Delay Start: ${{ inputs.delay_start }}"
+          echo "Number of Procs: ${{ inputs.numprocs }}"
+          echo "Parallelism: ${{ inputs.parallelism }}"
+          echo "Collector Version: ${{ inputs.collector_version }}"
+          echo "Region ID: ${{ inputs.region_id }}"
+
   launch-project:
     name: Launch Project
     runs-on: ubuntu-latest
