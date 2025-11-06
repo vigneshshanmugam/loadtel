@@ -47,6 +47,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       encrypted_api_key: ${{ steps.save-project-information.outputs.encrypted_api_key }}
+      es_url: ${{ steps.save-project-information.outputs.es_url }}
       ingest_url: ${{ steps.save-project-information.outputs.ingest_url }}
       kibana_url: ${{ steps.save-project-information.outputs.kibana_url }}
       project_id: ${{ steps.save-project-information.outputs.project_id }}
@@ -88,10 +89,10 @@ jobs:
           terraform output --json api_key | jq -r .encoded >> apikey.txt
           encrypted_api_key=$(echo ${{ secrets.ENCRYPTION_KEY }} | gpg --pinentry-mode loopback --passphrase-fd 0 -c -o - apikey.txt | base64 -w 0)
           echo "encrypted_api_key=$encrypted_api_key" >> $GITHUB_OUTPUT
+          echo "es_url=$(terraform output -raw es_url)" >> $GITHUB_OUTPUT
           echo "ingest_url=$(terraform output -raw apm_url | sed 's/.apm./.ingest./')" >> $GITHUB_OUTPUT
           echo "kibana_url=$(terraform output -raw kibana_url)" >> $GITHUB_OUTPUT
           echo "project_id=$(terraform output -raw project_id)" >> $GITHUB_OUTPUT
-
 
       - name: Encrypt Terraform State
         id: encrypt-terraform-state
@@ -154,9 +155,9 @@ jobs:
         id: generate-config
         env:
           OTLP_API_KEY: ${{ inputs.output_type == 'otlp' && steps.load-api-key.outputs.api_key || '' }}
-          OTLP_ENDPOINT: ${{ inputs.output_type == 'otlp' && format('{0}:443', needs.launch-project.outputs.ingest_endpoint) || '' }}
+          OTLP_ENDPOINT: ${{ inputs.output_type == 'otlp' && format('{0}:443', needs.launch-project.outputs.ingest_url) || '' }}
           ELASTICSEARCH_API_KEY: ${{ inputs.output_type == 'elasticsearch' && steps.load-api-key.outputs.api_key || '' }}
-          ELASTICSEARCH_ENDPOINT: ${{ inputs.output_type == 'elasticsearch' && format('{0}:443', needs.launch-project.outputs.ingest_endpoint) || '' }}
+          ELASTICSEARCH_ENDPOINT: ${{ inputs.output_type == 'elasticsearch' && needs.launch-project.outputs.es_url || '' }}
           MONITORING_OTLP_ENDPOINT: ${{ secrets.global_monitoring_otlp_endpoint }}
           MONITORING_API_KEY: ${{ secrets.global_monitoring_api_key }}
         run: |
