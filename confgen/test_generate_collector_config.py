@@ -243,9 +243,7 @@ class TestGenerateConfig:
             clear=True,
         ):
             config = generate_config(template_dir=template_dir)
-            assert "hostmetrics/1:" in config
-            assert "hostmetrics/2:" in config
-            assert "hostmetrics/3:" in config
+            assert "hostmetrics" in config
 
     def test_generate_includes_all_processors(self):
         """Test that all processors are included in the config."""
@@ -259,9 +257,9 @@ class TestGenerateConfig:
             clear=True,
         ):
             config = generate_config(template_dir=template_dir)
-            assert "attributes/1:" in config
-            assert "attributes/2:" in config
-            assert "attributes/3:" in config
+            assert "transform/1:" in config
+            assert "transform/2:" in config
+            assert "transform/3:" in config
             assert "batch:" in config
             assert "resourcedetection:" in config
 
@@ -311,14 +309,13 @@ class TestGenerateConfig:
         ):
             config = generate_config(template_dir=template_dir)
             # Should have instances 1-5
-            assert "hostmetrics/1:" in config
-            assert "hostmetrics/2:" in config
-            assert "hostmetrics/3:" in config
-            assert "hostmetrics/4:" in config
-            assert "hostmetrics/5:" in config
-            assert "hostmetrics/6:" not in config
-            assert "attributes/1:" in config
-            assert "attributes/5:" in config
+            assert "hostmetrics" in config
+            assert "transform/1:" in config
+            assert "transform/2:" in config
+            assert "transform/3:" in config
+            assert "transform/4:" in config
+            assert "transform/5:" in config
+            assert "transform/6:" not in config
             assert "otlp/5:" in config
             assert "metrics/otlp/5:" in config
 
@@ -335,8 +332,8 @@ class TestGenerateConfig:
         ):
             config = generate_config(template_dir=template_dir)
             # Should have instances 1-3 (default)
-            assert "hostmetrics/1:" in config
-            assert "hostmetrics/2:" in config
-            assert "hostmetrics/3:" in config
-            assert "hostmetrics/4:" not in config
+            assert "transform/1:" in config
+            assert "transform/2:" in config
+            assert "transform/3:" in config
+            assert "transform/4:" not in config
 

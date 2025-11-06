@@ -95,7 +95,7 @@ jobs:
           processors:
             transform:
               metric_statements:
-                - set(resource.attributes["iteration"], "${ITERATION}")
+                - set(resource.attributes["instance"], "${ITERATION}")
             resourcedetection:
               detectors: ["system"]
               system:
