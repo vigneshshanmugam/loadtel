@@ -43,6 +43,7 @@ jobs:
       delay_start: ${{ inputs.delay_start }}
       numprocs: ${{ inputs.numprocs }}
       parallelism: ${{ inputs.parallelism }}
+      num_instances: ${{ inputs.num_instances }}
       collector_version: ${{ inputs.collector_version }}
     secrets:
       ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
