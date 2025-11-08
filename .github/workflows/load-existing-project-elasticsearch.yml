@@ -36,7 +36,7 @@ on:
 jobs:
   load-existing-project-elasticsearch:
     name: Load
-    uses: graphaelli/improved-computing-machine/.github/workflows/single-existing-project.yml@main
+    uses: graphaelli/loadtel/.github/workflows/single-existing-project.yml@main
     with:
       output_type: elasticsearch
       duration: ${{ inputs.duration }}

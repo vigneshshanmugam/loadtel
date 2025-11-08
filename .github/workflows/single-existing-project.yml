@@ -180,7 +180,7 @@ jobs:
     needs:
       - configure-collector
       - determine-parallelism
-    uses: graphaelli/improved-computing-machine/.github/workflows/load.yml@main
+    uses: graphaelli/loadtel/.github/workflows/load.yml@main
     with:
       collector_config_artifact: collector-config
       collector_version: ${{ inputs.collector_version }}
