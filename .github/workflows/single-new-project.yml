@@ -53,14 +53,14 @@ jobs:
     steps:
       - name: Summarize Plan
         run: |
+          echo "Region ID: ${{ inputs.region_id }}"
+          echo "Collector Version: ${{ inputs.collector_version }}"
           echo "Output Type: ${{ inputs.output_type }}"
           echo "Duration: ${{ inputs.duration }}"
           echo "Delay Start: ${{ inputs.delay_start }}"
-          echo "Number of Procs: ${{ inputs.numprocs }}"
-          echo "numparallel: ${{ inputs.numparallel }}"
-          echo "Number of Instances: ${{ inputs.numpipelines }}"
-          echo "Collector Version: ${{ inputs.collector_version }}"
-          echo "Region ID: ${{ inputs.region_id }}"
+          echo "Collector Procs: ${{ inputs.numprocs }}"
+          echo "Pipelines per Collector: ${{ inputs.numpipelines }}"
+          echo "Parallel Jobs: ${{ inputs.numparallel }}"
           echo "Total Collector Count: $(( ${{ inputs.numpipelines }} * ${{ inputs.numprocs }} * ${{ inputs.numparallel }} ))"
 
   launch-project:
