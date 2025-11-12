@@ -20,7 +20,7 @@ on:
       collector_version:
         description: 'Version of the collector to use'
         required: true
-        default: '0.138.0'
+        default: '0.139.0'
         type: string
       collector_config_artifact:
         description: 'Name of the artifact containing the collector configuration'

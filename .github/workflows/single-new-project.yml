@@ -30,7 +30,7 @@ on:
       collector_version:
         description: 'Version of the collector to use'
         required: true
-        default: '0.138.0'
+        default: '0.139.0'
         type: string
       output_type:
         description: 'Output type for the collector (otlp or elasticsearch)'
