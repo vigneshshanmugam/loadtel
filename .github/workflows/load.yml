@@ -19,8 +19,7 @@ on:
         type: string
       collector_version:
         description: 'Version of the collector to use'
-        required: true
-        default: '0.139.0'
+        required: false
         type: string
       collector_config_artifact:
         description: 'Name of the artifact containing the collector configuration'
@@ -51,6 +50,13 @@ jobs:
       matrix:
         parallel: ${{ fromJSON(inputs.matrix) }}
     steps:
+      - name: Determine Collector Version
+        id: determine-collector-version
+        run: |
+          COLLECTOR_VERSION="${{ inputs.collector_version || vars.DEFAULT_COLLECTOR_VERSION }}"
+          echo "collector_version=$COLLECTOR_VERSION" >> $GITHUB_OUTPUT
+          echo "Determined collector version: $COLLECTOR_VERSION"
+
       - name: Checkout repository
         uses: actions/checkout@v5
         with:
@@ -58,7 +64,7 @@ jobs:
 
       - name: Install OpenTelemetry Collector
         run: |
-          curl -sL -o otelcol-contrib.deb https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v${{ inputs.collector_version }}/otelcol-contrib_${{ inputs.collector_version }}_linux_amd64.deb
+          curl -sL -o otelcol-contrib.deb https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v${{ steps.determine-collector-version.outputs.collector_version }}/otelcol-contrib_${{ steps.determine-collector-version.outputs.collector_version }}_linux_amd64.deb
           sudo dpkg -i otelcol-contrib.deb
           rm otelcol-contrib.deb
 

@@ -29,13 +29,27 @@ on:
         type: string
       collector_version:
         description: 'Version of the collector to use'
-        required: true
-        default: '0.139.0'
+        required: false
         type: string
 
 jobs:
+  determine-collector-version:
+    name: Determine Collector Version
+    runs-on: ubuntu-latest
+    outputs:
+      collector_version: ${{ steps.determine-collector-version.outputs.collector_version }}
+    steps:
+      - name: Determine Collector Version
+        id: determine-collector-version
+        run: |
+          COLLECTOR_VERSION="${{ inputs.collector_version || vars.DEFAULT_COLLECTOR_VERSION }}"
+          echo "collector_version=$COLLECTOR_VERSION" >> $GITHUB_OUTPUT
+          echo "Determined collector version: $COLLECTOR_VERSION"
+
   load-existing-project-elasticsearch:
     name: Load
+    needs:
+      - determine-collector-version
     uses: graphaelli/loadtel/.github/workflows/single-existing-project.yml@main
     with:
       output_type: elasticsearch
@@ -44,7 +58,7 @@ jobs:
       numprocs: ${{ inputs.numprocs }}
       numparallel: ${{ inputs.numparallel }}
       numpipelines: ${{ inputs.numpipelines }}
-      collector_version: ${{ inputs.collector_version }}
+      collector_version: ${{ needs.determine-collector-version.outputs.collector_version }}
     secrets:
       ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
       global_monitoring_otlp_endpoint: ${{ secrets.global_monitoring_otlp_endpoint }}

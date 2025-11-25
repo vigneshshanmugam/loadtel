@@ -29,8 +29,7 @@ on:
         type: string
       collector_version:
         description: 'Version of the collector to use'
-        required: true
-        default: '0.139.0'
+        required: false
         type: string
       output_type:
         description: 'Output type for the collector (otlp or elasticsearch)'
@@ -47,14 +46,29 @@ on:
         type: string
 
 jobs:
+  determine-collector-version:
+    name: Determine Collector Version
+    runs-on: ubuntu-latest
+    outputs:
+      collector_version: ${{ steps.determine-collector-version.outputs.collector_version }}
+    steps:
+      - name: Determine Collector Version
+        id: determine-collector-version
+        run: |
+          COLLECTOR_VERSION="${{ inputs.collector_version || vars.DEFAULT_COLLECTOR_VERSION }}"
+          echo "collector_version=$COLLECTOR_VERSION" >> $GITHUB_OUTPUT
+          echo "Determined collector version: $COLLECTOR_VERSION"
+
   plan:
     name: Summarize Plan
     runs-on: ubuntu-latest
+    needs:
+      - determine-collector-version
     steps:
       - name: Summarize Plan
         run: |
           echo "Region ID: ${{ inputs.region_id }}"
-          echo "Collector Version: ${{ inputs.collector_version }}"
+          echo "Collector Version: ${{ needs.determine-collector-version.outputs.collector_version }}"
           echo "Output Type: ${{ inputs.output_type }}"
           echo "Duration: ${{ inputs.duration }}"
           echo "Delay Start: ${{ inputs.delay_start }}"
@@ -209,10 +223,11 @@ jobs:
     needs:
       - configure-collector
       - determine-numparallel
+      - determine-collector-version
     uses: graphaelli/loadtel/.github/workflows/load.yml@main
     with:
       collector_config_artifact: collector-config
-      collector_version: ${{ inputs.collector_version }}
+      collector_version: ${{ needs.determine-collector-version.outputs.collector_version }}
       delay_start: ${{ inputs.delay_start }}
       duration: ${{ inputs.duration }}
       matrix: ${{ needs.determine-numparallel.outputs.matrix }}
