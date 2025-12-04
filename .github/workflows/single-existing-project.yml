@@ -194,7 +194,7 @@ jobs:
       - configure-collector
       - determine-numparallel
       - determine-collector-version
-    uses: graphaelli/loadtel/.github/workflows/load.yml@main
+    uses: vigneshshanmugam/loadtel/.github/workflows/load.yml@main
     with:
       collector_config_artifact: collector-config
       collector_version: ${{ needs.determine-collector-version.outputs.collector_version }}
