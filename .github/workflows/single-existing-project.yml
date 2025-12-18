@@ -41,11 +41,17 @@ on:
         required: true
         description: 'Encryption key for GPG decryption'
       single_existing_project_es_api_key:
-        required: true
+        required: false
         description: 'API key for the existing Elastic Cloud observability project'
       single_existing_project_es_endpoint:
-        required: true
+        required: false
         description: 'Elasticsearch endpoint URL for the existing project'
+      single_existing_project_ingest_endpoint:
+        required: false
+        description: 'OTLP endpoint URL for the existing project'
+      single_existing_project_otlp_api_key:
+        required: false
+        description: 'API key for the existing project'
       global_monitoring_otlp_endpoint:
         required: true
         description: 'OTLP endpoint URL for monitoring telemetry from the OpenTelemetry collectors'
