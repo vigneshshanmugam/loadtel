@@ -50,7 +50,7 @@ jobs:
     name: Load
     needs:
       - determine-collector-version
-    uses: graphaelli/loadtel/.github/workflows/single-existing-project.yml@main
+    uses: vigneshshanmugam/loadtel/.github/workflows/single-existing-project.yml@main
     with:
       output_type: otlp
       duration: ${{ inputs.duration }}
