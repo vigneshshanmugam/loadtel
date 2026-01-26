@@ -73,6 +73,7 @@ def get_template_context():
     return {
         "otlp_endpoint": os.getenv("OTLP_ENDPOINT", ""),
         "otlp_api_key": os.getenv("OTLP_API_KEY", ""),
+        "otlp_protocol": os.getenv("OTLP_PROTOCOL", "grpc"),
         "elasticsearch_endpoint": os.getenv("ELASTICSEARCH_ENDPOINT", ""),
         "elasticsearch_api_key": os.getenv("ELASTICSEARCH_API_KEY", ""),
         "monitoring_otlp_endpoint": os.getenv("MONITORING_OTLP_ENDPOINT", ""),

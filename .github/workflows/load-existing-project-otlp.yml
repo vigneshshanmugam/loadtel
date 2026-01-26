@@ -31,6 +31,14 @@ on:
         description: 'Version of the collector to use'
         required: false
         type: string
+      otlp_protocol:
+        description: 'OTLP protocol type (grpc or http)'
+        required: true
+        default: 'grpc'
+        type: choice
+        options:
+          - grpc
+          - http
 
 jobs:
   determine-collector-version:
@@ -46,13 +54,14 @@ jobs:
           echo "collector_version=$COLLECTOR_VERSION" >> $GITHUB_OUTPUT
           echo "Determined collector version: $COLLECTOR_VERSION"
 
-  load-existing-project-elasticsearch:
+  load-existing-project-otlp:
     name: Load
     needs:
       - determine-collector-version
     uses: vigneshshanmugam/loadtel/.github/workflows/single-existing-project.yml@main
     with:
       output_type: otlp
+      otlp_protocol: ${{ inputs.otlp_protocol }}
       duration: ${{ inputs.duration }}
       delay_start: ${{ inputs.delay_start }}
       numprocs: ${{ inputs.numprocs }}

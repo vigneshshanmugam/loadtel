@@ -36,6 +36,11 @@ on:
         required: true
         default: 'otlp'
         type: string
+      otlp_protocol:
+        description: 'OTLP protocol type (grpc or http)'
+        required: false
+        default: 'grpc'
+        type: string
     secrets:
       ENCRYPTION_KEY:
         required: true
@@ -83,6 +88,7 @@ jobs:
         run: |
           echo "Collector Version: ${{ needs.determine-collector-version.outputs.collector_version }}"
           echo "Output Type: ${{ inputs.output_type }}"
+          echo "OTLP Protocol: ${{ inputs.otlp_protocol }}"
           echo "Duration: ${{ inputs.duration }}"
           echo "Delay Start: ${{ inputs.delay_start }}"
           echo "Collector Procs: ${{ inputs.numprocs }}"
@@ -138,6 +144,7 @@ jobs:
         env:
           OTLP_API_KEY: ${{ inputs.output_type == 'otlp' && secrets.single_existing_project_otlp_api_key || '' }}
           OTLP_ENDPOINT: ${{ inputs.output_type == 'otlp' && secrets.single_existing_project_ingest_endpoint || '' }}
+          OTLP_PROTOCOL: ${{ inputs.otlp_protocol }}
           ELASTICSEARCH_API_KEY: ${{ inputs.output_type == 'elasticsearch' && secrets.single_existing_project_es_api_key || '' }}
           ELASTICSEARCH_ENDPOINT: ${{ inputs.output_type == 'elasticsearch' && secrets.single_existing_project_es_endpoint || '' }}
           MONITORING_OTLP_ENDPOINT: ${{ secrets.global_monitoring_otlp_endpoint }}

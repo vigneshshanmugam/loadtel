@@ -128,6 +128,18 @@ class TestGetTemplateContext:
             context = get_template_context()
             assert context["numpipelines"] == 7
 
+    def test_otlp_protocol_defaults_to_grpc(self):
+        """Test that otlp_protocol defaults to grpc when not set."""
+        with patch.dict(os.environ, {}, clear=True):
+            context = get_template_context()
+            assert context["otlp_protocol"] == "grpc"
+
+    def test_otlp_protocol_from_env(self):
+        """Test that otlp_protocol is read from environment variable."""
+        with patch.dict(os.environ, {"OTLP_PROTOCOL": "http"}, clear=True):
+            context = get_template_context()
+            assert context["otlp_protocol"] == "http"
+
 
 class TestGenerateConfig:
     """Test the generate_config function."""
@@ -336,4 +348,69 @@ class TestGenerateConfig:
             assert "transform/2:" in config
             assert "transform/3:" in config
             assert "transform/4:" not in config
+
+    def test_generate_with_otlp_grpc_protocol(self):
+        """Test config generation with OTLP gRPC protocol (default)."""
+        template_dir = Path(__file__).parent
+        with patch.dict(
+            os.environ,
+            {
+                "OTLP_ENDPOINT": "https://otlp.example.com",
+                "OTLP_API_KEY": "test-key",
+                "OTLP_PROTOCOL": "grpc",
+            },
+            clear=True,
+        ):
+            config = generate_config(template_dir=template_dir)
+            # Should use otlp exporter (gRPC)
+            assert "otlp/1:" in config
+            assert "otlp/2:" in config
+            assert "otlp/3:" in config
+            assert "exporters: [otlp/1]" in config
+            assert "exporters: [otlp/2]" in config
+            assert "exporters: [otlp/3]" in config
+            # Should NOT use otlphttp
+            assert "otlphttp/1:" not in config
+
+    def test_generate_with_otlp_http_protocol(self):
+        """Test config generation with OTLP HTTP protocol."""
+        template_dir = Path(__file__).parent
+        with patch.dict(
+            os.environ,
+            {
+                "OTLP_ENDPOINT": "https://otlp.example.com",
+                "OTLP_API_KEY": "test-key",
+                "OTLP_PROTOCOL": "http",
+            },
+            clear=True,
+        ):
+            config = generate_config(template_dir=template_dir)
+            # Should use otlphttp exporter
+            assert "otlphttp/1:" in config
+            assert "otlphttp/2:" in config
+            assert "otlphttp/3:" in config
+            assert "exporters: [otlphttp/1]" in config
+            assert "exporters: [otlphttp/2]" in config
+            assert "exporters: [otlphttp/3]" in config
+            # Should NOT use otlp (gRPC) - check for exact exporter name with leading space
+            assert "  otlp/1:" not in config
+            assert "exporters: [otlp/1]" not in config
+
+    def test_generate_defaults_to_grpc_when_protocol_not_set(self):
+        """Test that config generation defaults to gRPC when OTLP_PROTOCOL is not set."""
+        template_dir = Path(__file__).parent
+        with patch.dict(
+            os.environ,
+            {
+                "OTLP_ENDPOINT": "https://otlp.example.com",
+                "OTLP_API_KEY": "test-key",
+            },
+            clear=True,
+        ):
+            config = generate_config(template_dir=template_dir)
+            # Should default to otlp exporter (gRPC)
+            assert "otlp/1:" in config
+            assert "exporters: [otlp/1]" in config
+            # Should NOT use otlphttp
+            assert "otlphttp/1:" not in config
 
