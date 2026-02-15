@@ -44,11 +44,6 @@ on:
         options:
           - metrics
           - all
-      loadgen_concurrency:
-        description: 'Loadgen receiver concurrency (used when generator_mode=all)'
-        required: false
-        default: '128'
-        type: string
 
 jobs:
   determine-collector-version:
@@ -212,7 +207,7 @@ jobs:
           MONITORING_API_KEY: ${{ secrets.global_monitoring_api_key }}
           numpipelines: ${{ inputs.numpipelines }}
           GENERATOR_MODE: ${{ inputs.generator_mode }}
-          LOADGEN_CONCURRENCY: ${{ inputs.loadgen_concurrency }}
+          LOADGEN_CONCURRENCY: '1'
         run: |
           source .venv/bin/activate
           ./confgen/generate-collector-config.py > config.yaml

@@ -161,7 +161,7 @@ class TestGetTemplateContext:
             assert context["monitoring_api_key"] == ""
             assert context["numpipelines"] == 3  # Default value
             assert context["generator_mode"] == "metrics"
-            assert context["loadgen_concurrency"] == 128
+            assert context["loadgen_concurrency"] == 1
 
     def test_numpipelines_from_env(self):
         """Test that numpipelines is read from environment variable."""

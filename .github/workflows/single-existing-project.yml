@@ -46,11 +46,6 @@ on:
         required: false
         default: 'metrics'
         type: string
-      loadgen_concurrency:
-        description: 'Loadgen receiver concurrency (used when generator_mode=all)'
-        required: false
-        default: '128'
-        type: string
     secrets:
       ENCRYPTION_KEY:
         required: true
@@ -106,7 +101,6 @@ jobs:
           echo "Output Type: ${{ inputs.output_type }}"
           echo "OTLP Protocol: ${{ inputs.otlp_protocol }}"
           echo "Generator Mode: ${{ inputs.generator_mode }}"
-          echo "Loadgen Concurrency: ${{ inputs.loadgen_concurrency }}"
           echo "Duration: ${{ inputs.duration }}"
           echo "Delay Start: ${{ inputs.delay_start }}"
           echo "Collector Procs: ${{ inputs.numprocs }}"
@@ -169,7 +163,7 @@ jobs:
           MONITORING_API_KEY: ${{ secrets.global_monitoring_api_key }}
           numpipelines: ${{ inputs.numpipelines }}
           GENERATOR_MODE: ${{ inputs.generator_mode }}
-          LOADGEN_CONCURRENCY: ${{ inputs.loadgen_concurrency }}
+          LOADGEN_CONCURRENCY: '1'
         run: |
           source .venv/bin/activate
           ./confgen/generate-collector-config.py > config.yaml

@@ -32,7 +32,7 @@ def validate_environment():
         sys.exit(1)
 
     if generator_mode == "all":
-        raw_concurrency = os.getenv("LOADGEN_CONCURRENCY", "128")
+        raw_concurrency = os.getenv("LOADGEN_CONCURRENCY", "1")
         try:
             loadgen_concurrency = int(raw_concurrency)
         except ValueError:
@@ -88,9 +88,9 @@ def get_template_context():
     numpipelines = int(os.getenv("numpipelines", "3"))
     generator_mode = os.getenv("GENERATOR_MODE", "metrics")
     if generator_mode == "all":
-        loadgen_concurrency = int(os.getenv("LOADGEN_CONCURRENCY", "128"))
+        loadgen_concurrency = int(os.getenv("LOADGEN_CONCURRENCY", "1"))
     else:
-        loadgen_concurrency = 128
+        loadgen_concurrency = 1
     return {
         "otlp_endpoint": os.getenv("OTLP_ENDPOINT", ""),
         "otlp_api_key": os.getenv("OTLP_API_KEY", ""),
