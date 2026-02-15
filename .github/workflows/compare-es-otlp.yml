@@ -243,6 +243,8 @@ jobs:
       ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
       global_monitoring_otlp_endpoint: ${{ secrets.global_monitoring_otlp_endpoint }}
       global_monitoring_api_key: ${{ secrets.global_monitoring_api_key }}
+      docker_username: ${{ secrets.docker_username }}
+      docker_password: ${{ secrets.docker_password }}
 
   cleanup-project:
     name: Cleanup New Project

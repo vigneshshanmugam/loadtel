@@ -73,6 +73,12 @@ on:
       global_monitoring_api_key:
         required: true
         description: 'API key for the monitoring OTLP endpoint'
+      docker_username:
+        required: false
+        description: 'Username for docker.elastic.co registry access'
+      docker_password:
+        required: false
+        description: 'Password/token for docker.elastic.co registry access'
 
 jobs:
   determine-collector-version:
@@ -194,4 +200,6 @@ jobs:
       ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
       global_monitoring_otlp_endpoint: ${{ secrets.global_monitoring_otlp_endpoint }}
       global_monitoring_api_key: ${{ secrets.global_monitoring_api_key }}
+      docker_username: ${{ secrets.docker_username }}
+      docker_password: ${{ secrets.docker_password }}
 

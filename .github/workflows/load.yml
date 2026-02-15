@@ -45,6 +45,12 @@ on:
         global_monitoring_api_key:
           required: true
           description: 'API key for the monitoring OTLP endpoint'
+        docker_username:
+          required: false
+          description: 'Username for docker.elastic.co registry access'
+        docker_password:
+          required: false
+          description: 'Password/token for docker.elastic.co registry access'
 
 jobs:
   load:
@@ -70,20 +76,20 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Login to GHCR
+      - name: Login to Docker Elastic Registry
         if: ${{ inputs.generator_mode == 'all' }}
         uses: docker/login-action@v3
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          registry: docker.elastic.co
+          username: ${{ secrets.docker_username }}
+          password: ${{ secrets.docker_password }}
 
       - name: Install OpenTelemetry Collector
         env:
           GENERATOR_MODE: ${{ inputs.generator_mode }}
         run: |
           if [ "${GENERATOR_MODE}" = "all" ]; then
-            image="ghcr.io/${{ github.repository_owner }}/loadtel-loadgen-collector:latest"
+            image="docker.elastic.co/observability-ci/otel-loadgen:latest"
             echo "Installing custom collector from ${image}"
             docker pull "${image}"
             container_id="$(docker create "${image}")"

@@ -87,5 +87,7 @@ jobs:
       ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
       global_monitoring_otlp_endpoint: ${{ secrets.global_monitoring_otlp_endpoint }}
       global_monitoring_api_key: ${{ secrets.global_monitoring_api_key }}
+      docker_username: ${{ secrets.docker_username }}
+      docker_password: ${{ secrets.docker_password }}
       single_existing_project_otlp_api_key: ${{ secrets.single_existing_project_otlp_api_key }}
       single_existing_project_ingest_endpoint: ${{ secrets.single_existing_project_ingest_endpoint }}
