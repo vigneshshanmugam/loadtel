@@ -67,7 +67,7 @@ jobs:
       - name: Determine Collector Version
         id: determine-collector-version
         run: |
-          COLLECTOR_VERSION="${{ inputs.collector_version || vars.DEFAULT_COLLECTOR_VERSION }}"
+          COLLECTOR_VERSION="${{ inputs.collector_version || vars.DEFAULT_COLLECTOR_VERSION || '0.127.0' }}"
           echo "collector_version=$COLLECTOR_VERSION" >> $GITHUB_OUTPUT
           echo "Determined collector version: $COLLECTOR_VERSION"
 
@@ -85,14 +85,7 @@ jobs:
           password: ${{ secrets.docker_password }}
 
       - name: Install OpenTelemetry Collector
-        if: ${{ inputs.generator_mode == 'metrics' }}
-        env:
-          GENERATOR_MODE: ${{ inputs.generator_mode }}
         run: |
-          if [ -z "${{ steps.determine-collector-version.outputs.collector_version }}" ]; then
-            echo "collector version is empty; set inputs.collector_version or vars.DEFAULT_COLLECTOR_VERSION"
-            exit 1
-          fi
           curl -sL -o otelcol-contrib.deb https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v${{ steps.determine-collector-version.outputs.collector_version }}/otelcol-contrib_${{ steps.determine-collector-version.outputs.collector_version }}_linux_amd64.deb
           sudo dpkg -i otelcol-contrib.deb
           rm otelcol-contrib.deb
@@ -105,7 +98,6 @@ jobs:
           docker pull "${image}"
 
       - name: Configure Monitoring of the Runner
-        if: ${{ inputs.generator_mode == 'metrics' }}
         env:
           MONITORING_OTLP_ENDPOINT: ${{ secrets.global_monitoring_otlp_endpoint }}
           MONITORING_API_KEY: ${{ secrets.global_monitoring_api_key }}
@@ -190,7 +182,6 @@ jobs:
           EOF
 
       - name: Validate Monitoring Config
-        if: ${{ inputs.generator_mode == 'metrics' }}
         run: |
           if [ ! -s loadmon.yaml ]; then
             exit 0
@@ -199,7 +190,6 @@ jobs:
           /usr/bin/otelcol-contrib --config loadmon.yaml validate
 
       - name: Start Monitoring the Runner
-        if: ${{ inputs.generator_mode == 'metrics' }}
         run: |
           if [ ! -s loadmon.yaml ]; then
             exit 0
