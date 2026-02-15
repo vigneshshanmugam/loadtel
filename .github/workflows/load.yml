@@ -89,7 +89,7 @@ jobs:
           GENERATOR_MODE: ${{ inputs.generator_mode }}
         run: |
           if [ "${GENERATOR_MODE}" = "all" ]; then
-            image="docker.elastic.co/observability-ci/otel-loadgen:latest"
+            image="docker.elastic.co/observability-ci/otel-loadgen:git-382d8540f99a"
             echo "Installing custom collector from ${image}"
             docker pull "${image}"
             container_id="$(docker create "${image}")"
