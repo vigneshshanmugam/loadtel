@@ -1,6 +1,7 @@
 receivers:
 {% if generator_mode == "all" %}
   loadgen:
+    disable_pdata_reuse: true
     concurrency: {{ loadgen_concurrency }}
 {% else %}
   hostmetrics:
@@ -47,6 +48,7 @@ processors:
 {% endif %}
 {% endfor %}
 
+{% if generator_mode != "all" %}
   batch:
   resourcedetection:
     detectors: ["system"]
@@ -79,6 +81,7 @@ processors:
           enabled: true
         os.type:
           enabled: true
+{% endif %}
 
 exporters:
 {% if otlp_endpoint %}
@@ -113,15 +116,15 @@ service:
 {% if generator_mode == "all" %}
     metrics/otlp/{{ i }}:
       receivers: [loadgen]
-      processors: [transform/{{ i }},resourcedetection,batch]
+      processors: [transform/{{ i }}]
       exporters: [{{ otlp_exporter }}/{{ i }}]
     logs/otlp/{{ i }}:
       receivers: [loadgen]
-      processors: [transform/{{ i }},resourcedetection,batch]
+      processors: [transform/{{ i }}]
       exporters: [{{ otlp_exporter }}/{{ i }}]
     traces/otlp/{{ i }}:
       receivers: [loadgen]
-      processors: [transform/{{ i }},resourcedetection,batch]
+      processors: [transform/{{ i }}]
       exporters: [{{ otlp_exporter }}/{{ i }}]
 {% else %}
     metrics/otlp/{{ i }}:
@@ -136,15 +139,15 @@ service:
 {% if generator_mode == "all" %}
     metrics/elasticsearch/{{ i }}:
       receivers: [loadgen]
-      processors: [transform/{{ i }},resourcedetection]
+      processors: [transform/{{ i }}]
       exporters: [elasticsearch/{{ i }}]
     logs/elasticsearch/{{ i }}:
       receivers: [loadgen]
-      processors: [transform/{{ i }},resourcedetection]
+      processors: [transform/{{ i }}]
       exporters: [elasticsearch/{{ i }}]
     traces/elasticsearch/{{ i }}:
       receivers: [loadgen]
-      processors: [transform/{{ i }},resourcedetection]
+      processors: [transform/{{ i }}]
       exporters: [elasticsearch/{{ i }}]
 {% else %}
     metrics/elasticsearch/{{ i }}:
