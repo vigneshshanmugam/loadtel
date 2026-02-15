@@ -88,19 +88,14 @@ jobs:
         env:
           GENERATOR_MODE: ${{ inputs.generator_mode }}
         run: |
+          curl -sL -o otelcol-contrib.deb https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v${{ steps.determine-collector-version.outputs.collector_version }}/otelcol-contrib_${{ steps.determine-collector-version.outputs.collector_version }}_linux_amd64.deb
+          sudo dpkg -i otelcol-contrib.deb
+          rm otelcol-contrib.deb
+
           if [ "${GENERATOR_MODE}" = "all" ]; then
             image="docker.elastic.co/observability-ci/otel-loadgen:git-382d8540f99a"
-            echo "Installing custom collector from ${image}"
+            echo "Prefetching custom collector image ${image}"
             docker pull "${image}"
-            container_id="$(docker create "${image}")"
-            docker cp "${container_id}:/usr/bin/otelcol-contrib" ./otelcol-contrib
-            docker rm "${container_id}"
-            sudo install -m 0755 ./otelcol-contrib /usr/bin/otelcol-contrib
-            rm ./otelcol-contrib
-          else
-            curl -sL -o otelcol-contrib.deb https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v${{ steps.determine-collector-version.outputs.collector_version }}/otelcol-contrib_${{ steps.determine-collector-version.outputs.collector_version }}_linux_amd64.deb
-            sudo dpkg -i otelcol-contrib.deb
-            rm otelcol-contrib.deb
           fi
 
       - name: Configure Monitoring of the Runner
@@ -219,6 +214,8 @@ jobs:
           DURATION: ${{ inputs.duration }}
           DELAY_START: ${{ inputs.delay_start }}
           NUMPROCS: ${{ inputs.numprocs }}
+          GENERATOR_MODE: ${{ inputs.generator_mode }}
+          LOADGEN_DOCKER_IMAGE: docker.elastic.co/observability-ci/otel-loadgen:git-382d8540f99a
         run: ./generate-supervisord-config.sh
 
       - name: Download Collector Config
@@ -232,8 +229,15 @@ jobs:
           echo ${{ secrets.ENCRYPTION_KEY }} | gpg --pinentry-mode loopback --passphrase-fd 0 --decrypt -o config.yaml config.yaml.gpg
 
       - name: Validate Collector Config
+        env:
+          GENERATOR_MODE: ${{ inputs.generator_mode }}
         run: |
-          /usr/bin/otelcol-contrib --config config.yaml validate
+          if [ "${GENERATOR_MODE}" = "all" ]; then
+            image="docker.elastic.co/observability-ci/otel-loadgen:git-382d8540f99a"
+            docker run --rm -v "$(pwd)/config.yaml:/config.yaml:ro" "${image}" --config /config.yaml validate
+          else
+            /usr/bin/otelcol-contrib --config config.yaml validate
+          fi
 
       - name: Start OpenTelemetry Collectors
         env:
