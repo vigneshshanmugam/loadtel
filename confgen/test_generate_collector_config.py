@@ -478,6 +478,9 @@ class TestGenerateConfig:
             assert "receivers: [loadgen]" in config
             assert "metric_statements:" in config
             assert "context: resource" in config
+            assert "transform/rewrite:" in config
+            assert "Substring(MD5(UUID()), 0, 32)" in config
+            assert "processors: [transform/1,transform/rewrite]" in config
 
     def test_generate_metrics_mode_backwards_compatible(self):
         """Test metrics mode remains default and metrics-only."""
