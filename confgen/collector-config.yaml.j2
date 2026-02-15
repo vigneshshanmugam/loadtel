@@ -26,8 +26,15 @@ receivers:
 processors:
 {% for i in range(1, numpipelines + 1) %}
   transform/{{ i }}:
+{% if generator_mode == "all" %}
+    metric_statements:
+      - context: resource
+        statements:
+          - set(attributes["instance"], "${env:ITERATION}-${env:INSTANCE}-{{ i }}")
+{% else %}
     metric_statements:
       - set(resource.attributes["instance"], "${env:ITERATION}-${env:INSTANCE}-{{ i }}")
+{% endif %}
 {% if generator_mode == "all" %}
     log_statements:
       - context: resource

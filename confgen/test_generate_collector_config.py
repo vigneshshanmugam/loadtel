@@ -476,6 +476,8 @@ class TestGenerateConfig:
             assert "logs/otlp/1:" in config
             assert "traces/otlp/1:" in config
             assert "receivers: [loadgen]" in config
+            assert "metric_statements:" in config
+            assert "context: resource" in config
 
     def test_generate_metrics_mode_backwards_compatible(self):
         """Test metrics mode remains default and metrics-only."""
