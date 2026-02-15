@@ -1,6 +1,7 @@
 receivers:
 {% if generator_mode == "all" %}
   loadgen:
+    disable_pdata_reuse: true
     concurrency: {{ loadgen_concurrency }}
 {% else %}
   hostmetrics:

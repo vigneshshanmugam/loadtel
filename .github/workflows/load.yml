@@ -94,7 +94,7 @@ jobs:
       - name: Prefetch Loadgen Image
         if: ${{ inputs.generator_mode == 'all' }}
         run: |
-          image="docker.elastic.co/observability-ci/otel-loadgen:git-382d8540f99a"
+          image="docker.elastic.co/observability-ci/otel-loadgen:git-bedc49dadeed"
           echo "Prefetching custom collector image ${image}"
           docker pull "${image}"
 
@@ -215,7 +215,7 @@ jobs:
           DELAY_START: ${{ inputs.delay_start }}
           NUMPROCS: ${{ inputs.numprocs }}
           GENERATOR_MODE: ${{ inputs.generator_mode }}
-          LOADGEN_DOCKER_IMAGE: docker.elastic.co/observability-ci/otel-loadgen:git-382d8540f99a
+          LOADGEN_DOCKER_IMAGE: docker.elastic.co/observability-ci/otel-loadgen:git-bedc49dadeed
         run: ./generate-supervisord-config.sh
 
       - name: Download Collector Config
@@ -233,7 +233,7 @@ jobs:
           GENERATOR_MODE: ${{ inputs.generator_mode }}
         run: |
           if [ "${GENERATOR_MODE}" = "all" ]; then
-            image="docker.elastic.co/observability-ci/otel-loadgen:git-382d8540f99a"
+            image="docker.elastic.co/observability-ci/otel-loadgen:git-bedc49dadeed"
             docker run --rm -v "$(pwd)/config.yaml:/config.yaml:ro" "${image}" --config /config.yaml validate
           else
             /usr/bin/otelcol-contrib --config config.yaml validate
