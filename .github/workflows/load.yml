@@ -25,6 +25,11 @@ on:
         description: 'Name of the artifact containing the collector configuration'
         required: true
         type: string
+      generator_mode:
+        description: 'Telemetry generator mode (metrics or all)'
+        required: false
+        default: 'metrics'
+        type: string
       matrix:
         description: 'Matrix of parallel jobs to run'
         required: true
@@ -63,10 +68,23 @@ jobs:
           fetch-depth: 1
 
       - name: Install OpenTelemetry Collector
+        env:
+          GENERATOR_MODE: ${{ inputs.generator_mode }}
         run: |
-          curl -sL -o otelcol-contrib.deb https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v${{ steps.determine-collector-version.outputs.collector_version }}/otelcol-contrib_${{ steps.determine-collector-version.outputs.collector_version }}_linux_amd64.deb
-          sudo dpkg -i otelcol-contrib.deb
-          rm otelcol-contrib.deb
+          if [ "${GENERATOR_MODE}" = "all" ]; then
+            image="ghcr.io/${{ github.repository_owner }}/loadtel-loadgen-collector:latest"
+            echo "Installing custom collector from ${image}"
+            docker pull "${image}"
+            container_id="$(docker create "${image}")"
+            docker cp "${container_id}:/usr/bin/otelcol-contrib" ./otelcol-contrib
+            docker rm "${container_id}"
+            sudo install -m 0755 ./otelcol-contrib /usr/bin/otelcol-contrib
+            rm ./otelcol-contrib
+          else
+            curl -sL -o otelcol-contrib.deb https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v${{ steps.determine-collector-version.outputs.collector_version }}/otelcol-contrib_${{ steps.determine-collector-version.outputs.collector_version }}_linux_amd64.deb
+            sudo dpkg -i otelcol-contrib.deb
+            rm otelcol-contrib.deb
+          fi
 
       - name: Configure Monitoring of the Runner
         env:

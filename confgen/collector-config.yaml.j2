@@ -1,4 +1,8 @@
 receivers:
+{% if generator_mode == "all" %}
+  loadgen:
+    concurrency: {{ loadgen_concurrency }}
+{% else %}
   hostmetrics:
     collection_interval: 60s
     scrapers:
@@ -17,12 +21,23 @@ receivers:
             enabled: true
       network:
       processes:
+{% endif %}
 
 processors:
 {% for i in range(1, numpipelines + 1) %}
   transform/{{ i }}:
     metric_statements:
       - set(resource.attributes["instance"], "${env:ITERATION}-${env:INSTANCE}-{{ i }}")
+{% if generator_mode == "all" %}
+    log_statements:
+      - context: resource
+        statements:
+          - set(attributes["instance"], "${env:ITERATION}-${env:INSTANCE}-{{ i }}")
+    trace_statements:
+      - context: resource
+        statements:
+          - set(attributes["instance"], "${env:ITERATION}-${env:INSTANCE}-{{ i }}")
+{% endif %}
 {% endfor %}
 
   batch:
@@ -88,18 +103,48 @@ service:
 {% if otlp_endpoint %}
 {% set otlp_exporter = 'otlphttp' if otlp_protocol == 'http' else 'otlp' %}
 {% for i in range(1, numpipelines + 1) %}
+{% if generator_mode == "all" %}
+    metrics/otlp/{{ i }}:
+      receivers: [loadgen]
+      processors: [transform/{{ i }},resourcedetection,batch]
+      exporters: [{{ otlp_exporter }}/{{ i }}]
+    logs/otlp/{{ i }}:
+      receivers: [loadgen]
+      processors: [transform/{{ i }},resourcedetection,batch]
+      exporters: [{{ otlp_exporter }}/{{ i }}]
+    traces/otlp/{{ i }}:
+      receivers: [loadgen]
+      processors: [transform/{{ i }},resourcedetection,batch]
+      exporters: [{{ otlp_exporter }}/{{ i }}]
+{% else %}
     metrics/otlp/{{ i }}:
       receivers: [hostmetrics]
       processors: [transform/{{ i }},resourcedetection,batch]
       exporters: [{{ otlp_exporter }}/{{ i }}]
+{% endif %}
 {% endfor %}
 {% endif %}
 {% if elasticsearch_endpoint %}
 {% for i in range(1, numpipelines + 1) %}
+{% if generator_mode == "all" %}
+    metrics/elasticsearch/{{ i }}:
+      receivers: [loadgen]
+      processors: [transform/{{ i }},resourcedetection]
+      exporters: [elasticsearch/{{ i }}]
+    logs/elasticsearch/{{ i }}:
+      receivers: [loadgen]
+      processors: [transform/{{ i }},resourcedetection]
+      exporters: [elasticsearch/{{ i }}]
+    traces/elasticsearch/{{ i }}:
+      receivers: [loadgen]
+      processors: [transform/{{ i }},resourcedetection]
+      exporters: [elasticsearch/{{ i }}]
+{% else %}
     metrics/elasticsearch/{{ i }}:
       receivers: [hostmetrics]
       processors: [transform/{{ i }},resourcedetection]
       exporters: [elasticsearch/{{ i }}]
+{% endif %}
 {% endfor %}
 {% endif %}
 {% if not monitoring_otlp_endpoint or not monitoring_api_key %}

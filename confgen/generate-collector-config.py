@@ -26,6 +26,22 @@ def validate_environment():
         print("expected OTLP_API_KEY or ELASTICSEARCH_API_KEY", file=sys.stderr)
         sys.exit(1)
 
+    generator_mode = os.getenv("GENERATOR_MODE", "metrics")
+    if generator_mode not in {"metrics", "all"}:
+        print("expected GENERATOR_MODE to be one of: metrics, all", file=sys.stderr)
+        sys.exit(1)
+
+    if generator_mode == "all":
+        raw_concurrency = os.getenv("LOADGEN_CONCURRENCY", "128")
+        try:
+            loadgen_concurrency = int(raw_concurrency)
+        except ValueError:
+            print("expected LOADGEN_CONCURRENCY to be a positive integer", file=sys.stderr)
+            sys.exit(1)
+        if loadgen_concurrency <= 0:
+            print("expected LOADGEN_CONCURRENCY to be a positive integer", file=sys.stderr)
+            sys.exit(1)
+
 
 def generate_config(template_dir=None):
     """Generate the collector configuration from the template.
@@ -70,6 +86,11 @@ def get_template_context():
     """Build the template context from environment variables."""
     # Get number of instances, defaulting to 3 for backward compatibility
     numpipelines = int(os.getenv("numpipelines", "3"))
+    generator_mode = os.getenv("GENERATOR_MODE", "metrics")
+    if generator_mode == "all":
+        loadgen_concurrency = int(os.getenv("LOADGEN_CONCURRENCY", "128"))
+    else:
+        loadgen_concurrency = 128
     return {
         "otlp_endpoint": os.getenv("OTLP_ENDPOINT", ""),
         "otlp_api_key": os.getenv("OTLP_API_KEY", ""),
@@ -79,6 +100,8 @@ def get_template_context():
         "monitoring_otlp_endpoint": os.getenv("MONITORING_OTLP_ENDPOINT", ""),
         "monitoring_api_key": os.getenv("MONITORING_API_KEY", ""),
         "numpipelines": numpipelines,
+        "generator_mode": generator_mode,
+        "loadgen_concurrency": loadgen_concurrency,
     }
 
 

@@ -84,6 +84,41 @@ class TestValidateEnvironment:
             # Should not raise
             validate_environment()
 
+    def test_invalid_generator_mode(self, capsys):
+        """Test that validation fails for unsupported generator mode."""
+        with patch.dict(
+            os.environ,
+            {
+                "OTLP_ENDPOINT": "http://otlp",
+                "OTLP_API_KEY": "otlp-key",
+                "GENERATOR_MODE": "invalid",
+            },
+            clear=True,
+        ):
+            with pytest.raises(SystemExit) as exc_info:
+                validate_environment()
+            assert exc_info.value.code == 1
+            captured = capsys.readouterr()
+            assert "expected GENERATOR_MODE" in captured.err
+
+    def test_loadgen_requires_positive_integer_concurrency(self, capsys):
+        """Test that validation fails for non-positive loadgen concurrency."""
+        with patch.dict(
+            os.environ,
+            {
+                "OTLP_ENDPOINT": "http://otlp",
+                "OTLP_API_KEY": "otlp-key",
+                "GENERATOR_MODE": "all",
+                "LOADGEN_CONCURRENCY": "0",
+            },
+            clear=True,
+        ):
+            with pytest.raises(SystemExit) as exc_info:
+                validate_environment()
+            assert exc_info.value.code == 1
+            captured = capsys.readouterr()
+            assert "expected LOADGEN_CONCURRENCY" in captured.err
+
 
 class TestGetTemplateContext:
     """Test the get_template_context function."""
@@ -99,6 +134,8 @@ class TestGetTemplateContext:
                 "ELASTICSEARCH_API_KEY": "es-key",
                 "MONITORING_OTLP_ENDPOINT": "http://mon",
                 "MONITORING_API_KEY": "mon-key",
+                "GENERATOR_MODE": "all",
+                "LOADGEN_CONCURRENCY": "256",
             },
             clear=True,
         ):
@@ -109,6 +146,8 @@ class TestGetTemplateContext:
             assert context["elasticsearch_api_key"] == "es-key"
             assert context["monitoring_otlp_endpoint"] == "http://mon"
             assert context["monitoring_api_key"] == "mon-key"
+            assert context["generator_mode"] == "all"
+            assert context["loadgen_concurrency"] == 256
 
     def test_missing_variables_default_to_empty(self):
         """Test that missing variables default to empty strings."""
@@ -121,6 +160,8 @@ class TestGetTemplateContext:
             assert context["monitoring_otlp_endpoint"] == ""
             assert context["monitoring_api_key"] == ""
             assert context["numpipelines"] == 3  # Default value
+            assert context["generator_mode"] == "metrics"
+            assert context["loadgen_concurrency"] == 128
 
     def test_numpipelines_from_env(self):
         """Test that numpipelines is read from environment variable."""
@@ -413,4 +454,44 @@ class TestGenerateConfig:
             assert "exporters: [otlp/1]" in config
             # Should NOT use otlphttp
             assert "otlphttp/1:" not in config
+
+    def test_generate_all_includes_metrics_logs_traces(self):
+        """Test all mode includes all signal pipelines."""
+        template_dir = Path(__file__).parent
+        with patch.dict(
+            os.environ,
+            {
+                "OTLP_ENDPOINT": "https://otlp.example.com",
+                "OTLP_API_KEY": "test-key",
+                "GENERATOR_MODE": "all",
+                "LOADGEN_CONCURRENCY": "256",
+            },
+            clear=True,
+        ):
+            config = generate_config(template_dir=template_dir)
+            assert "loadgen:" in config
+            assert "concurrency: 256" in config
+            assert "hostmetrics:" not in config
+            assert "metrics/otlp/1:" in config
+            assert "logs/otlp/1:" in config
+            assert "traces/otlp/1:" in config
+            assert "receivers: [loadgen]" in config
+
+    def test_generate_metrics_mode_backwards_compatible(self):
+        """Test metrics mode remains default and metrics-only."""
+        template_dir = Path(__file__).parent
+        with patch.dict(
+            os.environ,
+            {
+                "OTLP_ENDPOINT": "https://otlp.example.com",
+                "OTLP_API_KEY": "test-key",
+            },
+            clear=True,
+        ):
+            config = generate_config(template_dir=template_dir)
+            assert "hostmetrics:" in config
+            assert "loadgen:" not in config
+            assert "metrics/otlp/1:" in config
+            assert "logs/otlp/1:" not in config
+            assert "traces/otlp/1:" not in config
 

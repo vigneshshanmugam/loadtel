@@ -44,6 +44,19 @@ on:
         required: true
         default: "aws-us-east-1"
         type: string
+      generator_mode:
+        description: 'Telemetry generator mode (metrics or all)'
+        required: false
+        default: 'metrics'
+        type: choice
+        options:
+          - metrics
+          - all
+      loadgen_concurrency:
+        description: 'Loadgen receiver concurrency (used when generator_mode=all)'
+        required: false
+        default: '128'
+        type: string
 
 jobs:
   determine-collector-version:
@@ -70,6 +83,8 @@ jobs:
           echo "Region ID: ${{ inputs.region_id }}"
           echo "Collector Version: ${{ needs.determine-collector-version.outputs.collector_version }}"
           echo "Output Type: ${{ inputs.output_type }}"
+          echo "Generator Mode: ${{ inputs.generator_mode }}"
+          echo "Loadgen Concurrency: ${{ inputs.loadgen_concurrency }}"
           echo "Duration: ${{ inputs.duration }}"
           echo "Delay Start: ${{ inputs.delay_start }}"
           echo "Collector Procs: ${{ inputs.numprocs }}"
@@ -207,6 +222,8 @@ jobs:
           MONITORING_OTLP_ENDPOINT: ${{ secrets.global_monitoring_otlp_endpoint }}
           MONITORING_API_KEY: ${{ secrets.global_monitoring_api_key }}
           numpipelines: ${{ inputs.numpipelines }}
+          GENERATOR_MODE: ${{ inputs.generator_mode }}
+          LOADGEN_CONCURRENCY: ${{ inputs.loadgen_concurrency }}
         run: |
           source .venv/bin/activate
           ./confgen/generate-collector-config.py > config.yaml
@@ -232,6 +249,7 @@ jobs:
       duration: ${{ inputs.duration }}
       matrix: ${{ needs.determine-numparallel.outputs.matrix }}
       numprocs: ${{ inputs.numprocs }}
+      generator_mode: ${{ inputs.generator_mode }}
     secrets:
       ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
       global_monitoring_otlp_endpoint: ${{ secrets.global_monitoring_otlp_endpoint }}

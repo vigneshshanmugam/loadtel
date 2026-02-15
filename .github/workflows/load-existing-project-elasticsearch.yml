@@ -31,6 +31,19 @@ on:
         description: 'Version of the collector to use'
         required: false
         type: string
+      generator_mode:
+        description: 'Telemetry generator mode (metrics or all)'
+        required: false
+        default: 'metrics'
+        type: choice
+        options:
+          - metrics
+          - all
+      loadgen_concurrency:
+        description: 'Loadgen receiver concurrency (used when generator_mode=all)'
+        required: false
+        default: '128'
+        type: string
 
 jobs:
   determine-collector-version:
@@ -59,6 +72,8 @@ jobs:
       numparallel: ${{ inputs.numparallel }}
       numpipelines: ${{ inputs.numpipelines }}
       collector_version: ${{ needs.determine-collector-version.outputs.collector_version }}
+      generator_mode: ${{ inputs.generator_mode }}
+      loadgen_concurrency: ${{ inputs.loadgen_concurrency }}
     secrets:
       ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
       global_monitoring_otlp_endpoint: ${{ secrets.global_monitoring_otlp_endpoint }}
